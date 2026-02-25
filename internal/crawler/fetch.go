@@ -40,41 +40,44 @@ func NewFetcher(delay time.Duration, cacheDir string) *Fetcher {
 	}
 }
 
-// Do fetches rawURL and returns the response body bytes.
-// It respects the rate limiter and serves from cache when available.
-func (f *Fetcher) Do(ctx context.Context, rawURL string) ([]byte, error) {
+// Do fetches rawURL and returns the response body bytes and the final URL
+// after any redirects. It respects the rate limiter and serves from cache
+// when available (cache hits return rawURL as finalURL).
+func (f *Fetcher) Do(ctx context.Context, rawURL string) (data []byte, finalURL string, err error) {
 	if f.cacheDir != "" {
 		if data, err := f.readCache(rawURL); err == nil {
 			slog.Debug("cache hit", "url", rawURL)
-			return data, nil
+			return data, rawURL, nil
 		}
 	}
 
 	if err := f.limiter.Wait(ctx); err != nil {
-		return nil, fmt.Errorf("rate limiter: %w", err)
+		return nil, "", fmt.Errorf("rate limiter: %w", err)
 	}
 
 	slog.Debug("fetching", "url", rawURL)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
+		return nil, "", fmt.Errorf("create request: %w", err)
 	}
 	req.Header.Set("User-Agent", "golm-connector/1.0")
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("http get: %w", err)
+		return nil, "", fmt.Errorf("http get: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("http %d: %s", resp.StatusCode, rawURL)
+		return nil, "", fmt.Errorf("http %d: %s", resp.StatusCode, rawURL)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("read body: %w", err)
+		return nil, "", fmt.Errorf("read body: %w", err)
 	}
+
+	finalURL = resp.Request.URL.String()
 
 	if f.cacheDir != "" {
 		if err := f.writeCache(rawURL, data); err != nil {
@@ -82,7 +85,7 @@ func (f *Fetcher) Do(ctx context.Context, rawURL string) ([]byte, error) {
 		}
 	}
 
-	return data, nil
+	return data, finalURL, nil
 }
 
 func cacheKey(rawURL string) string {

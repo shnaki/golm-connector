@@ -38,9 +38,10 @@ func Run(ctx context.Context, cfg CrawlConfig) (*CrawlResult, error) {
 		url string
 	}
 	type fetchRes struct {
-		url  string
-		data []byte
-		err  error
+		url      string
+		finalURL string
+		data     []byte
+		err      error
 	}
 
 	concurrency := cfg.MaxConcurrency
@@ -58,8 +59,8 @@ func Run(ctx context.Context, cfg CrawlConfig) (*CrawlResult, error) {
 		go func() {
 			defer wg.Done()
 			for job := range jobs {
-				data, err := fetcher.Do(ctx, job.url)
-				results <- fetchRes{url: job.url, data: data, err: err}
+				data, finalURL, err := fetcher.Do(ctx, job.url)
+				results <- fetchRes{url: job.url, finalURL: finalURL, data: data, err: err}
 			}
 		}()
 	}
@@ -119,12 +120,14 @@ func Run(ctx context.Context, cfg CrawlConfig) (*CrawlResult, error) {
 			if len(cfg.RetryURLs) == 0 {
 				doc, err := html.Parse(bytes.NewReader(res.data))
 				if err == nil {
-					for _, link := range ExtractLinks(res.url, doc) {
+					base := res.finalURL
+					if base == "" {
+						base = res.url
+					}
+					for _, link := range ExtractLinks(base, doc) {
 						if !visited[link] && InScope(seed, link) && isHTTPURL(link) {
-							if cfg.MaxPages == 0 || len(visited) < cfg.MaxPages {
-								visited[link] = true
-								queue = append(queue, link)
-							}
+							visited[link] = true
+							queue = append(queue, link)
 						}
 					}
 				}
