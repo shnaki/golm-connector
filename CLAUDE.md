@@ -58,6 +58,21 @@ Cobra を通じて CLI サブコマンドとして公開された 3 段階パイ
 
 **破壊的変更** — フッターに `BREAKING CHANGE: <説明>` を追加するか、type/scope の直後に `!` を付ける（例: `feat!: ...`）
 
+**GitHub Issue 関連コミット** — Issue に紐づく場合はトレーラーを追加:
+
+```
+git commit --trailer "Github-Issue:#<number>"
+```
+
+これにより、コミットメッセージ末尾に以下のトレーラーが付与される:
+
+```
+Github-Issue: #<number>
+```
+
+**ツール帰属の禁止** — `Co-Authored-By:` や `Co-authored-by:`、その他使用ツールへの
+言及をコミットメッセージ・PR 本文に含めないこと。
+
 ### 例
 
 ```
