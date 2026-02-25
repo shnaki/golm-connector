@@ -75,6 +75,8 @@ func Run(cfg ConvertConfig) (*ConvertResult, error) {
 		}()
 	}
 
+	slog.Info("convert: started", "files", len(htmlFiles), "workers", workers)
+
 	for _, f := range htmlFiles {
 		jobs <- job{path: f}
 	}
@@ -86,13 +88,16 @@ func Run(cfg ConvertConfig) (*ConvertResult, error) {
 	}()
 
 	res := &ConvertResult{Errors: make(map[string]string)}
+	done := 0
 	for r := range results {
 		if r.err != nil {
 			slog.Warn("convert error", "file", r.path, "err", r.err)
 			res.Errors[r.path] = r.err.Error()
 		} else {
-			slog.Info("converted", "file", r.path, "out", r.out)
+			done++
 			res.Saved = append(res.Saved, r.out)
+			slog.Info("convert: done", "n", done, "total", len(htmlFiles), "file", filepath.Base(r.out))
+			slog.Debug("convert: done path", "file", r.path, "out", r.out)
 		}
 	}
 

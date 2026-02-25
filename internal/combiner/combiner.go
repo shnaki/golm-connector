@@ -91,7 +91,12 @@ func Run(cfg CombineConfig) (*CombineResult, error) {
 	}
 	res.TotalWords = totalWords
 
+	slog.Info("combine: started", "files", len(entries), "words", totalWords)
+
 	needSplit := totalWords > maxWords
+	if needSplit {
+		slog.Info("combine: will split", "max_words", maxWords)
+	}
 
 	for _, e := range entries {
 		// If adding this file would exceed the limit, flush current buffer.

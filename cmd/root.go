@@ -19,7 +19,7 @@ var rootCmd = &cobra.Command{
 	Long: `golm-connector crawls websites, converts HTML pages to Markdown,
 and combines them into a single document suitable for NotebookLM.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		level := slog.LevelWarn
+		level := slog.LevelInfo
 		if verbose {
 			level = slog.LevelDebug
 		}

@@ -96,6 +96,8 @@ func Run(ctx context.Context, cfg CrawlConfig) (*CrawlResult, error) {
 		}
 	}
 
+	slog.Info("crawl: started", "url", seed, "max_pages", cfg.MaxPages)
+
 	dispatch()
 
 	for pending > 0 {
@@ -112,8 +114,9 @@ func Run(ctx context.Context, cfg CrawlConfig) (*CrawlResult, error) {
 				slog.Warn("save error", "url", res.url, "err", err)
 				result.Errors[res.url] = err.Error()
 			} else {
-				slog.Info("saved", "url", res.url, "path", outPath)
 				result.Saved = append(result.Saved, outPath)
+				slog.Info("crawl: saved", "n", len(result.Saved), "url", res.url)
+				slog.Debug("crawl: saved path", "url", res.url, "path", outPath)
 			}
 
 			// Extract links and enqueue new ones (skip if retry mode).
