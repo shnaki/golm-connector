@@ -146,7 +146,7 @@ golm-connector crawl https://example.com/docs/ -o html/ --retry-from-report repo
 
 ```bash
 # ビルド
-go build ./...
+go build .
 
 # テスト
 go test ./...
