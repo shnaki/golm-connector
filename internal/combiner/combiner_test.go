@@ -64,15 +64,31 @@ func TestCombineSplit(t *testing.T) {
 		t.Fatalf("Run: %v", err)
 	}
 
-	if len(res.OutputFiles) < 2 {
-		t.Errorf("expected split into 2+ files, got %d: %v", len(res.OutputFiles), res.OutputFiles)
+	if len(res.OutputFiles) != 2 {
+		t.Fatalf("expected split into 2 files, got %d: %v", len(res.OutputFiles), res.OutputFiles)
 	}
 
-	// Verify numbered naming.
+	// Verify all split files have numbered names.
+	outDir := filepath.Dir(outBase)
+	want1 := filepath.Join(outDir, "combined-001.md")
+	want2 := filepath.Join(outDir, "combined-002.md")
+
+	if res.OutputFiles[0] != want1 {
+		t.Errorf("first output = %q, want %q", res.OutputFiles[0], want1)
+	}
+	if res.OutputFiles[1] != want2 {
+		t.Errorf("second output = %q, want %q", res.OutputFiles[1], want2)
+	}
+
 	for _, f := range res.OutputFiles {
 		if _, err := os.Stat(f); err != nil {
 			t.Errorf("output file %q not found: %v", f, err)
 		}
+	}
+
+	// Verify unnumbered file does NOT exist.
+	if _, err := os.Stat(outBase); err == nil {
+		t.Errorf("unnumbered %q should not exist when splitting", outBase)
 	}
 }
 

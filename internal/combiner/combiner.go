@@ -50,12 +50,13 @@ func Run(cfg CombineConfig) (*CombineResult, error) {
 	partIndex := 1
 	wordCount := 0
 	var buf strings.Builder
+	var needSplit bool
 
 	flush := func() error {
 		if buf.Len() == 0 {
 			return nil
 		}
-		path := partPath(cfg.OutputPath, partIndex, len(res.OutputFiles) == 0 && wordCount <= maxWords)
+		path := partPath(cfg.OutputPath, partIndex, !needSplit)
 		// If we have more than one part, always use numbered names.
 		// Recalculate: use numbered only when we have split (partIndex > 1 or will split).
 		if err := os.WriteFile(path, []byte(buf.String()), 0o644); err != nil {
@@ -93,7 +94,7 @@ func Run(cfg CombineConfig) (*CombineResult, error) {
 
 	slog.Info("combine: started", "files", len(entries), "words", totalWords)
 
-	needSplit := totalWords > maxWords
+	needSplit = totalWords > maxWords
 	if needSplit {
 		slog.Info("combine: will split", "max_words", maxWords)
 	}
