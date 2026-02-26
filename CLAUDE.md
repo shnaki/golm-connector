@@ -6,7 +6,7 @@
 
 ```bash
 # ビルド
-go build ./...
+go build .
 
 # テスト（race 検出器なし — Windows で CGO なしでも安全）
 go test ./...
